@@ -9,28 +9,52 @@ namespace Efficient {
 int* g_odata;
 int* g_idata;
 
+__global__ void generate_zeros(int *data) {
+	int i = threadIdx.x;
+	data[i] = 0;
+}
+
+__global__ void set_zero(int size, int n, int *data) {
+	int i = threadIdx.x;
+	if (i >= n - 1) {
+		data[i] = 0;
+	}
+}
 __global__ void kern_up_sweep(int n, int *odata, const int *idata, int layer) {
-	int thrId = layer*threadIdx.x;
-	odata[thrId + layer - 1] += idata[thrId + (layer / 2) - 1];
+	int thrId = threadIdx.x + (blockIdx.x * blockDim.x);
+	if ((thrId < n) && (thrId%layer == 0)) {
+		odata[thrId + layer - 1] += idata[thrId + (layer / 2) - 1];
+	}
 }
 
 __global__ void kern_down_sweep(int n, int *odata, const int *idata, int layer) {
-	int thrId = n - 1 - layer*threadIdx.x;
-	int temp = idata[thrId + (layer / 2) - 1];
-	odata[thrId + (layer / 2) - 1] = idata[thrId + layer - 1];
-	odata[thrId + layer - 1] = temp + idata[thrId + layer - 1];
+	int thrId = threadIdx.x + (blockIdx.x * blockDim.x);
+	if ((thrId < n) && (thrId%layer == 0)) {
+		int temp = idata[thrId + (layer / 2) - 1];
+		odata[thrId + (layer / 2) - 1] = idata[thrId + layer - 1];
+		odata[thrId + layer - 1] += temp;
+	}
+	
+	
 }
 /**
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
  */
 void scan(int n, int *odata, const int *idata) {
-	cudaMalloc((void**)&g_odata, n * sizeof(int));
-	cudaMalloc((void**)&g_idata, n * sizeof(int));
+	int blockSize = 128;
+	int numBlocks = ceil((float)n / (float)blockSize);
+	int powTwo = pow(2, ilog2ceil(n));
+	dim3 fullBlocksPerGrid((powTwo + blockSize - 1) / blockSize);
+	cudaMalloc((void**)&g_odata, powTwo * sizeof(int));
+	cudaMalloc((void**)&g_idata, powTwo  * sizeof(int));
+
+	generate_zeros<<<1, powTwo>>>(g_odata);
+	generate_zeros<<<1, powTwo>>>(g_idata);
 
 	int* scanArray = new int[n];
-	scanArray[0] = 0;
-	for (int i = 1; i < n; i++) {
-		scanArray[i] = idata[i - 1];
+	//scanArray[0] = 0;
+	for (int i = 0; i < n; i++) {
+		scanArray[i] = idata[i];
 	}
 
 	cudaMemcpy(g_odata, odata, n*sizeof(int), cudaMemcpyHostToDevice);
@@ -38,26 +62,21 @@ void scan(int n, int *odata, const int *idata) {
 	
     for (int d = 0; d <= ilog2ceil(n) - 1; d++) {
 		int layer = pow(2, d + 1);
-		float mult = 1.0f / (float)layer;
 		g_odata = g_idata;
-		int block = ceil(n*mult);
-		kern_up_sweep<<<1, block>>>(n, g_odata, g_idata, layer);
+		kern_up_sweep<<<fullBlocksPerGrid, blockSize>>>(powTwo, g_odata, g_idata, layer);
 		g_idata = g_odata;
 	}
-	cudaMemcpy(scanArray, g_idata, n*sizeof(int), cudaMemcpyDeviceToHost);
-	scanArray[n-1] = 0;
-	cudaMemcpy(g_idata, scanArray, n*sizeof(int), cudaMemcpyDeviceToHost);
+	
+	set_zero<<<1, powTwo>>>(powTwo, n, g_idata);
+
 	for (int d = ilog2ceil(n) - 1; d >= 0; d--) {
 		int layer = pow(2, d + 1);
-		float mult = 1.0f / (float)layer;
 		g_odata = g_idata;
-		int block = ceil(n*mult);
-		kern_down_sweep<<<1, block>>>(n, g_odata, g_idata, layer);
+		kern_down_sweep<<<fullBlocksPerGrid, blockSize>>>(powTwo, g_odata, g_idata, layer);
 		g_idata = g_odata;
 	}
 
 	cudaMemcpy(odata, g_odata, n*sizeof(int), cudaMemcpyDeviceToHost);
-
 }
 
 /**
