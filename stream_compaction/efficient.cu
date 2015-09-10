@@ -107,15 +107,41 @@ int compact(int n, int *odata, const int *idata) {
 	cudaMemcpy(g_idata, idata, n*sizeof(int), cudaMemcpyHostToDevice);
 
 	Common::kernMapToBoolean<<<fullBlocksPerGrid, blockSize>>>(powTwo, dev_bools, g_idata);
-	
-	scan(powTwo, indices, idata);
+	cudaMemcpy(bools, dev_bools, n*sizeof(int), cudaMemcpyDeviceToHost);
+
+	scan(n, indices, bools);
 
 	cudaMemcpy(dev_indices, indices, n*sizeof(int), cudaMemcpyHostToDevice);
 
+	cudaMemcpy(g_idata, idata, n*sizeof(int), cudaMemcpyHostToDevice);
 	Common::kernScatter<<<fullBlocksPerGrid, blockSize>>>(powTwo, g_odata, g_idata, dev_bools, dev_indices);
+	
+	cudaMemcpy(odata, g_odata, n*sizeof(int), cudaMemcpyDeviceToHost);
+	/*
+	printf("Bools \n");
+	for (int i = 0; i < n; i++) {
+		printf("%i ", bools[i]);
+	}
+	printf("\n");
 
-	cudaMemcpy(bools, dev_bools, n*sizeof(int), cudaMemcpyDeviceToHost);
+	printf("Indices \n");
+	for (int i = 0; i < n; i++) {
+		printf("%i ", indices[i]);
+	}
+	printf("\n");
 
+	printf("idata \n");
+	for (int i = 0; i < n; i++) {
+		printf("%i ", idata[i]);
+	}
+	printf("\n");
+
+	printf("odata \n");
+	for (int i = 0; i < n; i++) {
+		printf("%i ", odata[i]);
+	}
+	printf("\n");
+	*/
     return indices[n-1] + bools[n-1];
 }
 
