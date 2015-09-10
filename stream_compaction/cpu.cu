@@ -26,12 +26,10 @@ int compactWithoutScan(int n, int *odata, const int *idata) {
 	for (int i = 0; i < n; i++) {
 		if (idata[i] != 0) {
 			odata[sum] = idata[i];
-			printf("%i ", odata[sum]);
 			sum++;
 		}
 		
 	}
-	printf("\n");
     return sum;
 }
 
@@ -55,10 +53,8 @@ int compactWithScan(int n, int *odata, const int *idata) {
 	for (int i = 0; i < n; i++) {
 		if (bools[i] == 1) {
 			odata[scanArray[i]] = idata[i];
-			printf("%i ", odata[scanArray[i]]);
 		}
 	}
-	printf("\n");
     return scanArray[n - 1] + bools[n - 1];
 }
 

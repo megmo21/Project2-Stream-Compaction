@@ -39,9 +39,10 @@ __global__ void kernMapToBoolean(int n, int *bools, const int *idata) {
 __global__ void kernScatter(int n, int *odata,
         const int *idata, const int *bools, const int *indices) {
     int thrId = threadIdx.x + (blockIdx.x * blockDim.x);
-	
-	if (bools[thrId] == 1) {
-		odata[indices[thrId]] = idata[thrId];
+	if (thrId < n) {
+		if (bools[thrId] == 1) {
+			odata[indices[thrId]] = idata[thrId];
+		}
 	}
 }
 
