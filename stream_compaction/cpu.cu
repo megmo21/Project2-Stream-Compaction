@@ -24,14 +24,14 @@ void scan(int n, int *odata, const int *idata) {
 int compactWithoutScan(int n, int *odata, const int *idata) {
     int sum = 0;
 	for (int i = 0; i < n; i++) {
-		if (idata[i] == 0) {
-			odata[i] = 0;
-		}
-		else {
-			odata[i] = 1;
+		if (idata[i] != 0) {
+			odata[sum] = idata[i];
+			printf("%i ", odata[sum]);
 			sum++;
 		}
+		
 	}
+	printf("\n");
     return sum;
 }
 
@@ -41,18 +41,25 @@ int compactWithoutScan(int n, int *odata, const int *idata) {
  * @returns the number of elements remaining after compaction.
  */
 int compactWithScan(int n, int *odata, const int *idata) {
-    for (int i = 0; i < n; i++) {
+    int* bools = new int[n];
+	for (int i = 0; i < n; i++) {
 		if (idata[i] == 0) {
-			odata[i] = 0;
+			bools[i] = 0;
 		}
 		else {
-			odata[i] = 1;
+			bools[i] = 1;
 		}
 	}
 	int* scanArray = new int[n];
-	scan(n, scanArray, odata);
-
-    return scanArray[n - 1] + odata[n - 1];
+	scan(n, scanArray, bools);
+	for (int i = 0; i < n; i++) {
+		if (bools[i] == 1) {
+			odata[scanArray[i]] = idata[i];
+			printf("%i ", odata[scanArray[i]]);
+		}
+	}
+	printf("\n");
+    return scanArray[n - 1] + bools[n - 1];
 }
 
 }
