@@ -8,6 +8,8 @@ namespace Efficient {
 
 int* g_odata;
 int* g_idata;
+int* dev_bools;
+int* dev_indices;
 
 __global__ void generate_zeros(int *data) {
 	int i = threadIdx.x;
@@ -89,8 +91,32 @@ void scan(int n, int *odata, const int *idata) {
  * @returns      The number of elements remaining after compaction.
  */
 int compact(int n, int *odata, const int *idata) {
-    // TODO
-    return -1;
+	int blockSize = 128;
+	int numBlocks = ceil((float)n / (float)blockSize);
+	int powTwo = pow(2, ilog2ceil(n));
+	dim3 fullBlocksPerGrid((powTwo + blockSize - 1) / blockSize);
+
+    cudaMalloc((void**)&g_odata, powTwo * sizeof(int));
+	cudaMalloc((void**)&g_idata, powTwo  * sizeof(int));
+	cudaMalloc((void**)&dev_bools, powTwo * sizeof(int));
+	cudaMalloc((void**)&dev_indices, powTwo * sizeof(int));
+
+	int* indices = new int[n];
+	int* bools = new int[n];
+
+	cudaMemcpy(g_idata, idata, n*sizeof(int), cudaMemcpyHostToDevice);
+
+	Common::kernMapToBoolean<<<fullBlocksPerGrid, blockSize>>>(powTwo, dev_bools, g_idata);
+	
+	scan(powTwo, indices, idata);
+
+	cudaMemcpy(dev_indices, indices, n*sizeof(int), cudaMemcpyHostToDevice);
+
+	Common::kernScatter<<<fullBlocksPerGrid, blockSize>>>(powTwo, g_odata, g_idata, dev_bools, dev_indices);
+
+	cudaMemcpy(bools, dev_bools, n*sizeof(int), cudaMemcpyDeviceToHost);
+
+    return indices[n-1] + bools[n-1];
 }
 
 }
