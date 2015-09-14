@@ -3,9 +3,53 @@ CUDA Stream Compaction
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Project 2**
 
-* (TODO) YOUR NAME HERE
-* Tested on: (TODO) Windows 22, i7-2222 @ 2.22GHz 22GB, GTX 222 222MB (Moore 2222 Lab)
+* Megan Moore
+* Tested on: Windows 7, i7-4770 @ 3.40GHz 16GB (Moore 100 Lab C)
 
+```
+
+****************
+** SCAN TESTS **
+****************
+    [   3  29  33  19   0  16  10  40  39  50  44  30   9 ...   4 -858993460 ]
+==== cpu scan, power-of-two ====
+    [   0   3  32  65  84  84 100 110 150 189 239 283 313 ... 6684 6688 ]
+==== cpu scan, non-power-of-two ====
+    [   0   3  32  65  84  84 100 110 150 189 239 283 313 ... 6613 6626 ]
+    passed
+==== naive scan, power-of-two ====
+    passed
+==== naive scan, non-power-of-two ====
+    passed
+==== work-efficient scan, power-of-two ====
+    passed
+==== work-efficient scan, non-power-of-two ====
+    passed
+==== thrust scan, power-of-two ====
+    passed
+==== thrust scan, non-power-of-two ====
+    passed
+
+*****************************
+** STREAM COMPACTION TESTS **
+*****************************
+    [   4   3   0   3   4   2   3   2   3   1   1   1   4 ...   3 -858993460 ]
+==== cpu compact without scan, power-of-two ====
+    [   4   3   3   4   2   3   2   3   1   1   1   4   3 ...   3 -858993460 ]
+    passed
+==== cpu compact without scan, non-power-of-two ====
+    [   4   3   3   4   2   3   2   3   1   1   1   4   3 ...   4   4 ]
+    passed
+==== cpu compact with scan ====
+    [   4   3   3   4   2   3   2   3   1   1   1   4   3 ...   3 -858993460 ]
+    passed
+==== work-efficient compact, power-of-two ====
+    passed
+==== work-efficient compact, non-power-of-two ====
+    passed
+Press any key to continue . . .
+
+```
 ### (TODO: Your README)
 
 Include analysis, etc. (Remember, this is public, so don't put
