@@ -63,8 +63,7 @@ Press any key to continue . . .
   Thrust) to the serial CPU version of Scan. Plot a graph of the comparison
   (with array size on the independent axis).
  ![](images/Graph.png "Array size analysis")
-  * To guess at what might be happening inside the Thrust implementation, take
-    a look at the Nsight timeline for its execution.
+  * The thrust application is taking a much longer time than all the other implimentations.  Seeing as the cudaEvent_t's, start and stop, occur right before and after the function call to thrust::exclusive_scan(), it could be possible that these events are picking up memory transfer timing.  Whereas, with all the other function, I was able to record the time without the memory transfer time being included.  One other interesting thing about the thrust application, is that the time for the non-power of 2 array is significantly lower than the time for the power of 2 array.  This, in theory, makes sense because a smaller array should take less time.  However, with all the other applications, they take approximately the same amount of time because the kernel is 2^(ilog2ceil(n)) times (for an array of size n).  In the thrust application, they must be allocating their memory better, as they clearly do not have to call the kernel 2^(ilog2ceil(n)) times.  
 
 * Write a brief explanation of the phenomena you see here.
   * Can you find the performance bottlenecks? Is it memory I/O? Computation? Is
