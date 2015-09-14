@@ -1,4 +1,6 @@
 #include <cstdio>
+#include <iostream>
+#include <chrono>
 #include "cpu.h"
 
 namespace StreamCompaction {
@@ -22,7 +24,9 @@ void scan(int n, int *odata, const int *idata) {
  * @returns the number of elements remaining after compaction.
  */
 int compactWithoutScan(int n, int *odata, const int *idata) {
+	using namespace std;
     int sum = 0;
+	auto begin = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < n; i++) {
 		if (idata[i] != 0) {
 			odata[sum] = idata[i];
@@ -30,6 +34,8 @@ int compactWithoutScan(int n, int *odata, const int *idata) {
 		}
 		
 	}
+	auto end = std::chrono::high_resolution_clock::now();
+	//std::cout << std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() << "ns" << std::endl;
     return sum;
 }
 

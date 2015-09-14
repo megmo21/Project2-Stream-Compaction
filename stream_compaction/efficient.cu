@@ -43,6 +43,10 @@ __global__ void kern_down_sweep(int n, int *odata, const int *idata, int layer) 
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
  */
 void scan(int n, int *odata, const int *idata) {
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+
 	int blockSize = 128;
 	int numBlocks = ceil((float)n / (float)blockSize);
 	int powTwo = pow(2, ilog2ceil(n));
@@ -62,13 +66,16 @@ void scan(int n, int *odata, const int *idata) {
 	cudaMemcpy(g_odata, odata, n*sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(g_idata, scanArray, n*sizeof(int), cudaMemcpyHostToDevice);
 	
+	cudaEventRecord(start);
     for (int d = 0; d <= ilog2ceil(n) - 1; d++) {
 		int layer = pow(2, d + 1);
 		g_odata = g_idata;
+		
 		kern_up_sweep<<<fullBlocksPerGrid, blockSize>>>(powTwo, g_odata, g_idata, layer);
 		g_idata = g_odata;
 	}
-	
+
+
 	set_zero<<<1, powTwo>>>(powTwo, n, g_idata);
 
 	for (int d = ilog2ceil(n) - 1; d >= 0; d--) {
@@ -77,7 +84,12 @@ void scan(int n, int *odata, const int *idata) {
 		kern_down_sweep<<<fullBlocksPerGrid, blockSize>>>(powTwo, g_odata, g_idata, layer);
 		g_idata = g_odata;
 	}
+	cudaEventRecord(stop);
 
+	cudaEventSynchronize(stop);
+	float milliseconds = 0;
+	cudaEventElapsedTime(&milliseconds, start, stop);
+	//printf("%f - ", milliseconds);
 	cudaMemcpy(odata, g_odata, n*sizeof(int), cudaMemcpyDeviceToHost);
 }
 
@@ -90,7 +102,7 @@ void scan(int n, int *odata, const int *idata) {
  * @param idata  The array of elements to compact.
  * @returns      The number of elements remaining after compaction.
  */
-int compact(int n, int *odata, const int *idata) {
+int compact(int n, int *odata, const int *idata) {	
 	int blockSize = 128;
 	int numBlocks = ceil((float)n / (float)blockSize);
 	int powTwo = pow(2, ilog2ceil(n));
@@ -115,7 +127,7 @@ int compact(int n, int *odata, const int *idata) {
 
 	cudaMemcpy(g_idata, idata, n*sizeof(int), cudaMemcpyHostToDevice);
 	Common::kernScatter<<<fullBlocksPerGrid, blockSize>>>(powTwo, g_odata, g_idata, dev_bools, dev_indices);
-	
+
 	cudaMemcpy(odata, g_odata, n*sizeof(int), cudaMemcpyDeviceToHost);
 	
     return indices[n-1] + bools[n-1];
