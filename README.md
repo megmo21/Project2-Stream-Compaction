@@ -62,9 +62,7 @@ Press any key to continue . . .
 * Compare all of these GPU Scan implementations (Naive, Work-Efficient, and
   Thrust) to the serial CPU version of Scan. Plot a graph of the comparison
   (with array size on the independent axis).
-  * You should use CUDA events for timing. Be sure **not** to include any
-    explicit memory operations in your performance measurements, for
-    comparability.
+ ![](images/Graph.png "Array size analysis")
   * To guess at what might be happening inside the Thrust implementation, take
     a look at the Nsight timeline for its execution.
 
