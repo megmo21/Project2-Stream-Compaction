@@ -63,17 +63,10 @@ Press any key to continue . . .
   Thrust) to the serial CPU version of Scan. Plot a graph of the comparison
   (with array size on the independent axis).
  ![](images/Graph.png "Array size analysis")
-  * The thrust application is taking a much longer time than all the other implimentations.  Seeing as the cudaEvent_t's, start and stop, occur right before and after the function call to thrust::exclusive_scan(), it could be possible that these events are picking up memory transfer timing.  Whereas, with all the other function, I was able to record the time without the memory transfer time being included.  One other interesting thing about the thrust application, is that the time for the non-power of 2 array is significantly lower than the time for the power of 2 array.  This, in theory, makes sense because a smaller array should take less time.  However, with all the other applications, they take approximately the same amount of time because the kernel is 2^(ilog2ceil(n)) times (for an array of size n).  In the thrust application, they must be allocating their memory better, as they clearly do not have to call the kernel 2^(ilog2ceil(n)) times.  
+  * I tried to use the chrono implimentation to time the CPU scan function.  However, I continuously got 0 nanoseconds for each test.
+  * The thrust application is taking a much longer time than all the other implimentations.  Seeing as the cudaEvent_t's, start and stop, occur right before and after the function call to thrust::exclusive_scan(), it could be possible that these events are picking up memory transfer timing.  Whereas, with all the other function, I was able to record the time without the memory transfer time being included.  One other interesting thing about the thrust application, is that the time for the non-power of 2 array is significantly lower than the time for the power of 2 array.  This, in theory, makes sense because a smaller array should take less time.  However, with all the other applications, they take approximately the same amount of time because the kernel is 2^(ilog2ceil(n)) times (for an array of size n).  This can be seen in the graph, as the naive/work-efficient power of 2 and non-power of 2 lines are almost identicle.  In the thrust application, they must be allocating their memory better, as they clearly do not have to call the kernel 2^(ilog2ceil(n)) times.  
 
 * Write a brief explanation of the phenomena you see here.
-  * Can you find the performance bottlenecks? Is it memory I/O? Computation? Is
-    it different for each implementation?
-
-* Paste the output of the test program into a triple-backtick block in your
-  README.
-  * If you add your own tests (e.g. for radix sort or to test additional corner
-    cases), be sure to mention it explicitly.
-
-These questions should help guide you in performance analysis on future
-assignments, as well.
+  * It is interesting that the naive implementation is running faster than the work-efficient implementation.  This seems to go against what we think should be happening.  An idea of what could possibly be causing this is that the work-efficient implementation requires two function calls to kernels.  If the array is not so large, that it requires multiple blocks, then it could finish the naive scan implementation in the same time it finishes just one of the functions (up/down sweep) in the work-efficient scan implementation.  
+  * I would guess that the bottlenecks are occuring at the memory transfers.  Especially in the work-efficient implementation, because it has so many different arrays (idata, odata, bools, and indices) it requires more memory allocation and transfers between the host and device.  I would not think the computation is a large part of the time, considering it is only addition, and the amount of addition that is necessary decreases throughout the function (in all of the implementations).  
 
